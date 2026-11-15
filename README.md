@@ -1,22 +1,24 @@
-# Proyecto POO: Aventura Textual (RPG)
+# Ultimo Vagon - Version 0 (muy basica)
 
+Juego de rol por consola en C++. Esta primera version solo tiene un combate:
+el jugador contra un Asesino, con dos armas (Navaja y Latigo), una chaqueta y un suero.
 
-**Personajes:**
+## Archivos
 
-Jugador
-Enemigos: ladrón, asesino, conductor
+Todos en la misma carpeta:
 
+- Clases: `Personaje`, `Objeto`, `Jugador`, `Enemigo`, `Asesino`, `Combate` (cada una con su `.h` y su `.cpp`)
+- `main.cpp`: crea al jugador y a un Asesino, y lanza el combate
 
-**Flujo del Juego:**
+## Compilar y ejecutar (Linux)
 
-El jugador despierta en el último vagón de un tren que avanza sin control. En el primer vagón, el Conductor ha decidido estrellar el tren. Para detenerlo, el jugador debe recorrer los 5 vagones, sobrevivir a quienes viajan en ellos y derrotar al Conductor.
+```
+g++ -std=c++17 -Wall *.cpp -o juego
+./juego
+```
 
+## Como se juega
 
-**Niveles:**
-
-Son 3 niveles, y en cada uno el jugador vuelve a comenzar desde el último vagón y los enemigos en cada vagón aumentan.
-
-
-**Descripción de objetos / inventario:**
-
-El jugador tiene dos armas al comienzo de cada nivel: una navaja y un látigo de fuego. En ciertos vagones, encuentra objetos útiles como un suero de vida que le aumenta la vida o una chaqueta protectora que reduce el daño que le pueden hacer los enemigos.
+Cada turno eliges un numero del menu: 1) Atacar, 2) Usar objeto, 3) Huir.
+Armas: Navaja (2 de dano) y Latigo (1 de dano a todos los enemigos).
+Objetos: Chaqueta (el Asesino te quita 1 vida menos por golpe) y Suero vital (+4 vidas).
