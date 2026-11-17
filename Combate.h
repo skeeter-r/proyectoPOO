@@ -3,30 +3,23 @@
 
 #include <vector>
 #include "Jugador.h"
-#include "Enemigo.h"
+#include "Vagon.h"
 
-enum class ResultadoCombate { VICTORIA, DERROTA, HUIDA };
-
-// Maneja una pelea por turnos entre el jugador y una lista de enemigos.
-// El jugador siempre actua primero; despues atacan los enemigos vivos.
+// Reglas del combate dentro de un vagon: el ataque del jugador y el turno de los enemigos.
+// El menu y el movimiento entre vagones los maneja Juego.
 class Combate {
 private:
     Jugador& jugador;
-    std::vector<Enemigo*>& enemigos;   // Combate NO los crea ni los borra
+    Vagon& vagon;
 
-    bool hayEnemigosVivos() const;
     std::vector<bool> estadoVivos() const;                     // quien esta vivo ahora
     void revisarCaidos(const std::vector<bool>& vivosAntes);   // avisa y da experiencia
 
-    void mostrarEstado() const;
-    bool turnoJugador();            // true si el jugador huyo
-    bool accionAtacar();            // true si gasto el turno
-    bool accionUsarObjeto();        // true si gasto el turno
-    void turnoEnemigos();
-
 public:
-    Combate(Jugador& jugador, std::vector<Enemigo*>& enemigos);
-    ResultadoCombate iniciar();
+    Combate(Jugador& jugador, Vagon& vagon);
+
+    bool accionAtacar();      // pide arma y objetivo; true si el jugador gasto su turno
+    void turnoEnemigos();     // cada enemigo vivo ataca a su manera (polimorfismo)
 };
 
 #endif

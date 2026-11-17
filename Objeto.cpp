@@ -30,8 +30,8 @@ Objeto Objeto::crearNudilleras() {
     return Objeto("Nudilleras", "Resta 4 vidas. Un solo uso", TipoObjeto::NUDILLERAS, 4);
 }
 Objeto Objeto::crearChaqueta() {
-    return Objeto("Chaqueta", "Reduce 1 el dano de cada golpe", TipoObjeto::CHAQUETA, 1);
+    return Objeto("Chaqueta", "Reduce 1 el dano de cada golpe (automatica)", TipoObjeto::CHAQUETA, 1);
 }
 Objeto Objeto::crearSueroVital() {
-    return Objeto("Suero vital", "Cura 4 vidas", TipoObjeto::SUERO_VITAL, 4);
+    return Objeto("Suero vital", "Cura 4 vidas (solo si las recuperas todas)", TipoObjeto::SUERO_VITAL, 4);
 }

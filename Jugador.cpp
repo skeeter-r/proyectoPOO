@@ -8,11 +8,17 @@ int primerArma(const std::vector<Objeto>& inv) {
         if (inv[i].esArma()) return static_cast<int>(i);
     return -1;
 }
+
+// Indice del primer objeto de ese tipo, o -1 si no hay
+int buscar(const std::vector<Objeto>& inv, TipoObjeto tipo) {
+    for (size_t i = 0; i < inv.size(); i++)
+        if (inv[i].getTipo() == tipo) return static_cast<int>(i);
+    return -1;
+}
 }
 
 Jugador::Jugador(const std::string& nombre)
-    : Personaje(nombre, 8), nivel(1), experiencia(0),
-      chaquetaPuesta(false), armaSeleccionada(0) {}
+    : Personaje(nombre, 8), nivel(1), experiencia(0), armaSeleccionada(0) {}
 
 void Jugador::atacar(Personaje& objetivo) {
     // Si el arma seleccionada ya no es valida, usa la primera que haya
@@ -40,7 +46,7 @@ void Jugador::atacar(Personaje& objetivo) {
 }
 
 void Jugador::recibirDanio(int cantidad) {
-    if (chaquetaPuesta) {
+    if (tieneChaqueta()) {
         cantidad -= 1;
         if (cantidad < 1) cantidad = 1;   // minimo 1
     }
@@ -49,25 +55,23 @@ void Jugador::recibirDanio(int cantidad) {
 
 void Jugador::agregarObjeto(const Objeto& obj) { inventario.push_back(obj); }
 
-bool Jugador::usarObjeto(int indice) {
-    if (indice < 0 || indice >= static_cast<int>(inventario.size())) return false;
-
-    Objeto obj = inventario[indice];
-    switch (obj.getTipo()) {
-        case TipoObjeto::CHAQUETA:
-            chaquetaPuesta = true;
-            std::cout << "Te pones la chaqueta: recibiras 1 de dano menos por golpe.\n";
-            break;
-        case TipoObjeto::SUERO_VITAL:
-            curar(obj.getValor());
-            std::cout << "Usas el suero vital. Vidas: " << vidas << "/" << vidasMax << "\n";
-            break;
-        default:
-            std::cout << "Las armas se usan atacando.\n";
-            return false;
+bool Jugador::usarSuero() {
+    int indice = buscar(inventario, TipoObjeto::SUERO_VITAL);
+    if (indice < 0) {
+        std::cout << "No tienes suero vital.\n";
+        return false;
     }
+
+    int cura = inventario[indice].getValor();
+    if (vidas > vidasMax - cura) {   // curaria menos de lo que otorga
+        std::cout << "Tus vidas no estan suficientemente bajas para usar el suero vital.\n";
+        return false;
+    }
+
+    curar(cura);
     inventario.erase(inventario.begin() + indice);
     armaSeleccionada = primerArma(inventario);
+    std::cout << "Usas el suero vital. Vidas: " << vidas << "/" << vidasMax << "\n";
     return true;
 }
 
@@ -78,21 +82,16 @@ bool Jugador::seleccionarArma(int indice) {
     return true;
 }
 
-bool Jugador::tieneNudilleras() const {
-    for (const Objeto& o : inventario)
-        if (o.getTipo() == TipoObjeto::NUDILLERAS) return true;
-    return false;
-}
+bool Jugador::tieneChaqueta() const { return buscar(inventario, TipoObjeto::CHAQUETA) >= 0; }
+bool Jugador::tieneSuero() const { return buscar(inventario, TipoObjeto::SUERO_VITAL) >= 0; }
+bool Jugador::tieneNudilleras() const { return buscar(inventario, TipoObjeto::NUDILLERAS) >= 0; }
 
 bool Jugador::quitarNudilleras() {
-    for (size_t i = 0; i < inventario.size(); i++) {
-        if (inventario[i].getTipo() == TipoObjeto::NUDILLERAS) {
-            inventario.erase(inventario.begin() + i);
-            armaSeleccionada = primerArma(inventario);
-            return true;
-        }
-    }
-    return false;
+    int indice = buscar(inventario, TipoObjeto::NUDILLERAS);
+    if (indice < 0) return false;
+    inventario.erase(inventario.begin() + indice);
+    armaSeleccionada = primerArma(inventario);
+    return true;
 }
 
 const std::vector<Objeto>& Jugador::getInventario() const { return inventario; }
@@ -106,7 +105,6 @@ void Jugador::subirNivel() {
 
 void Jugador::iniciarNivel() {
     vidas = vidasMax;
-    chaquetaPuesta = false;
     inventario.clear();
     inventario.push_back(Objeto::crearNavaja());
     inventario.push_back(Objeto::crearLatigo());
@@ -116,4 +114,3 @@ void Jugador::iniciarNivel() {
 
 int Jugador::getNivel() const { return nivel; }
 int Jugador::getExperiencia() const { return experiencia; }
-bool Jugador::getChaquetaPuesta() const { return chaquetaPuesta; }
