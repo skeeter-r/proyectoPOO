@@ -3,11 +3,10 @@
 
 #include "Enemigo.h"
 
-// Jefe final: 2 de dano por golpe.
-// Vidas segun el nivel: 6 (nivel 1), 9 (nivel 2) y 12 (nivel 3).
+// Jefe final: 9 vidas y 3 de dano por golpe (2 si el jugador lleva la chaqueta).
 class Conductor : public Enemigo {
 public:
-    Conductor(int vidas = 6);
+    Conductor(int vidas = 9);
     void atacar(Personaje& objetivo) override;
     std::string getTipo() const override;
 };

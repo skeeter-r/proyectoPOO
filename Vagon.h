@@ -7,14 +7,13 @@
 #include "Enemigo.h"
 #include "Objeto.h"
 
-// Un vagon del tren (una "habitacion" del mapa). Cada nivel tiene 4 vagones.
-// El vagon 1 es la cabina del Conductor (el primero del tren) y el vagon 4 es el ultimo,
-// donde empieza el jugador. "adelante" lleva hacia el vagon 1 y "atras" hacia el vagon 4.
+// Un vagon del tren = un nivel del juego (5 en total). El vagon 1 es el primero que
+// recorre el jugador y el vagon 5 es la cabina del Conductor.
 class Vagon {
 private:
-    int numero;                                // 1 (cabina del Conductor) a 4 (inicio del jugador)
+    int numero;                                // 1 a 5
     std::string descripcion;
-    std::vector<Enemigo*> enemigos;            // AGREGACION: los crea y libera quien arma el nivel (Juego por ahora, luego Tren), no el Vagon
+    std::vector<Enemigo*> enemigos;            // AGREGACION: los crea y libera quien arma el nivel (Juego por ahora, luego Tren)
     std::vector<Objeto> objetos;               // COMPOSICION: objetos que se pueden tomar aqui
     std::map<std::string, Vagon*> salidas;     // ASOCIACION: "adelante" y "atras"
 
@@ -29,6 +28,7 @@ public:
     void agregarEnemigo(Enemigo* enemigo);
     const std::vector<Enemigo*>& getEnemigos() const;
     bool hayEnemigosVivos() const;
+    std::vector<Enemigo*> vaciarEnemigos();   // los devuelve y deja el vagon sin enemigos (quien los recibe los libera)
 
     // Objetos
     void agregarObjeto(const Objeto& objeto);
@@ -38,7 +38,6 @@ public:
 
     int getNumero() const;
     const std::string& getDescripcion() const;
-    void describir() const;                 // imprime la descripcion y las salidas
 };
 
 #endif

@@ -10,12 +10,10 @@ TipoObjeto Objeto::getTipo() const { return tipo; }
 int Objeto::getValor() const { return valor; }
 
 bool Objeto::esArma() const {
-    return tipo == TipoObjeto::NAVAJA || tipo == TipoObjeto::LATIGO ||
-           tipo == TipoObjeto::NUDILLERAS;
+    return tipo == TipoObjeto::NAVAJA || tipo == TipoObjeto::LATIGO;
 }
 
 bool Objeto::golpeaATodos() const { return tipo == TipoObjeto::LATIGO; }
-bool Objeto::esUsoUnico() const { return tipo == TipoObjeto::NUDILLERAS; }
 
 std::string Objeto::serializar() const { return nombre; }
 
@@ -25,9 +23,6 @@ Objeto Objeto::crearNavaja() {
 }
 Objeto Objeto::crearLatigo() {
     return Objeto("Latigo", "Resta 1 vida a todos los enemigos", TipoObjeto::LATIGO, 1);
-}
-Objeto Objeto::crearNudilleras() {
-    return Objeto("Nudilleras", "Resta 4 vidas. Un solo uso", TipoObjeto::NUDILLERAS, 4);
 }
 Objeto Objeto::crearChaqueta() {
     return Objeto("Chaqueta", "Reduce 1 el dano de cada golpe (automatica)", TipoObjeto::CHAQUETA, 1);

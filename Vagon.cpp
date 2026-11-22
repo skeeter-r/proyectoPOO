@@ -1,5 +1,4 @@
 #include "Vagon.h"
-#include <iostream>
 
 Vagon::Vagon(int numero, const std::string& descripcion)
     : numero(numero), descripcion(descripcion) {}
@@ -24,6 +23,12 @@ bool Vagon::hayEnemigosVivos() const {
     return false;
 }
 
+std::vector<Enemigo*> Vagon::vaciarEnemigos() {
+    std::vector<Enemigo*> salientes = enemigos;
+    enemigos.clear();
+    return salientes;
+}
+
 void Vagon::agregarObjeto(const Objeto& objeto) { objetos.push_back(objeto); }
 
 bool Vagon::hayObjetos() const { return !objetos.empty(); }
@@ -38,7 +43,3 @@ std::vector<Objeto> Vagon::recogerObjetos() {
 
 int Vagon::getNumero() const { return numero; }
 const std::string& Vagon::getDescripcion() const { return descripcion; }
-
-void Vagon::describir() const {
-    std::cout << "=== VAGON " << numero << " ===\n" << descripcion << "\n";
-}

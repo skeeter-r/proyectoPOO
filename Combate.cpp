@@ -41,42 +41,45 @@ bool Combate::accionAtacar() {
         return false;
     }
 
-    cout << "Con que arma?\n";
+    // 1) Volver, 2..n) armas
+    cout << "Con que arma?\n 1) Volver\n";
     for (size_t k = 0; k < armas.size(); k++) {
         const Objeto& a = inv[armas[k]];
-        cout << " " << k + 1 << ") " << a.getNombre() << " (dano " << a.getValor() << ")";
+        cout << " " << k + 2 << ") " << a.getNombre() << " (dano " << a.getValor();
         if (a.golpeaATodos()) cout << ", golpea a todos";
-        if (a.esUsoUnico()) cout << ", un solo uso";
-        cout << "\n";
+        cout << ")\n";
     }
-    cout << " 0) Volver\n> ";
-    int op = leerOpcion(0, static_cast<int>(armas.size()));
-    if (op == 0) return false;
+    cout << "> ";
+    int op = leerOpcion(1, static_cast<int>(armas.size()) + 1);
+    if (op == 1) return false;
 
-    int indiceArma = armas[op - 1];
+    int indiceArma = armas[op - 2];
     jugador.seleccionarArma(indiceArma);
     bool golpeaATodos = inv[indiceArma].golpeaATodos();
 
     const vector<Enemigo*>& enemigos = vagon.getEnemigos();
-    vector<bool> antes = estadoVivos();
 
+    // Elegir objetivo (solo si el arma golpea a uno y hay varios enemigos vivos)
+    vector<int> vivos;
+    for (size_t i = 0; i < enemigos.size(); i++)
+        if (enemigos[i]->estaVivo()) vivos.push_back(static_cast<int>(i));
+
+    int objetivo = vivos[0];
+    if (!golpeaATodos && vivos.size() > 1) {
+        cout << "A quien?\n 1) Volver\n";
+        for (size_t k = 0; k < vivos.size(); k++)
+            cout << " " << k + 2 << ") " << enemigos[vivos[k]]->getNombre() << "\n";
+        cout << "> ";
+        int eleccion = leerOpcion(1, static_cast<int>(vivos.size()) + 1);
+        if (eleccion == 1) return false;
+        objetivo = vivos[eleccion - 2];
+    }
+
+    vector<bool> antes = estadoVivos();
     if (golpeaATodos) {
         for (Enemigo* e : enemigos)
             if (e->estaVivo()) jugador.atacar(*e);
     } else {
-        // Elegir objetivo entre los enemigos vivos
-        vector<int> vivos;
-        for (size_t i = 0; i < enemigos.size(); i++)
-            if (enemigos[i]->estaVivo()) vivos.push_back(static_cast<int>(i));
-
-        int objetivo = vivos[0];
-        if (vivos.size() > 1) {
-            cout << "A quien?\n";
-            for (size_t k = 0; k < vivos.size(); k++)
-                cout << " " << k + 1 << ") " << enemigos[vivos[k]]->getNombre() << "\n";
-            cout << "> ";
-            objetivo = vivos[leerOpcion(1, static_cast<int>(vivos.size())) - 1];
-        }
         jugador.atacar(*enemigos[objetivo]);
     }
 

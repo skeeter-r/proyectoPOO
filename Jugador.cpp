@@ -18,7 +18,8 @@ int buscar(const std::vector<Objeto>& inv, TipoObjeto tipo) {
 }
 
 Jugador::Jugador(const std::string& nombre)
-    : Personaje(nombre, 8), nivel(1), experiencia(0), armaSeleccionada(0) {}
+    : Personaje(nombre, 8), experiencia(0), experienciaAlEmpezar(0),
+      armaSeleccionada(0), sueroDesbloqueado(false) {}
 
 void Jugador::atacar(Personaje& objetivo) {
     // Si el arma seleccionada ya no es valida, usa la primera que haya
@@ -31,18 +32,12 @@ void Jugador::atacar(Personaje& objetivo) {
         return;
     }
 
-    Objeto arma = inventario[armaSeleccionada];   // copia, por si se elimina
+    const Objeto& arma = inventario[armaSeleccionada];
     int antes = objetivo.getVidas();
     objetivo.recibirDanio(arma.getValor());
     int quitadas = antes - objetivo.getVidas();
     std::cout << "Golpeas a " << objetivo.getNombre() << " con " << arma.getNombre()
-              << ": -" << quitadas << " vidas.\n";
-
-    if (arma.esUsoUnico()) {
-        inventario.erase(inventario.begin() + armaSeleccionada);
-        armaSeleccionada = primerArma(inventario);
-        std::cout << "(" << arma.getNombre() << " ya no se puede volver a usar.)\n";
-    }
+              << ": -" << quitadas << " vida(s).\n";
 }
 
 void Jugador::recibirDanio(int cantidad) {
@@ -53,7 +48,10 @@ void Jugador::recibirDanio(int cantidad) {
     Personaje::recibirDanio(cantidad);
 }
 
-void Jugador::agregarObjeto(const Objeto& obj) { inventario.push_back(obj); }
+void Jugador::agregarObjeto(const Objeto& obj) {
+    inventario.push_back(obj);
+    if (obj.getTipo() == TipoObjeto::SUERO_VITAL) sueroDesbloqueado = true;
+}
 
 bool Jugador::usarSuero() {
     int indice = buscar(inventario, TipoObjeto::SUERO_VITAL);
@@ -84,33 +82,31 @@ bool Jugador::seleccionarArma(int indice) {
 
 bool Jugador::tieneChaqueta() const { return buscar(inventario, TipoObjeto::CHAQUETA) >= 0; }
 bool Jugador::tieneSuero() const { return buscar(inventario, TipoObjeto::SUERO_VITAL) >= 0; }
-bool Jugador::tieneNudilleras() const { return buscar(inventario, TipoObjeto::NUDILLERAS) >= 0; }
-
-bool Jugador::quitarNudilleras() {
-    int indice = buscar(inventario, TipoObjeto::NUDILLERAS);
-    if (indice < 0) return false;
-    inventario.erase(inventario.begin() + indice);
-    armaSeleccionada = primerArma(inventario);
-    return true;
-}
 
 const std::vector<Objeto>& Jugador::getInventario() const { return inventario; }
 
 void Jugador::ganarExperiencia(int xp) { experiencia += xp; }
 
-void Jugador::subirNivel() {
-    nivel++;
-    vidasMax++;   // 8, 9 y 10 vidas en los niveles 1, 2 y 3
-}
-
 void Jugador::iniciarNivel() {
     vidas = vidasMax;
-    inventario.clear();
-    inventario.push_back(Objeto::crearNavaja());
-    inventario.push_back(Objeto::crearLatigo());
-    inventario.push_back(Objeto::crearNudilleras());
-    armaSeleccionada = 0;
+    // Si ya desbloqueo el suero, empieza cada intento con uno
+    if (sueroDesbloqueado && !tieneSuero()) inventario.push_back(Objeto::crearSueroVital());
+    armaSeleccionada = primerArma(inventario);
+    experienciaAlEmpezar = experiencia;
 }
 
-int Jugador::getNivel() const { return nivel; }
+void Jugador::descartarIntento() {
+    experiencia = experienciaAlEmpezar;
+    vidas = vidasMax;
+}
+
+void Jugador::reiniciar() {
+    vidas = vidasMax;
+    experiencia = 0;
+    experienciaAlEmpezar = 0;
+    armaSeleccionada = 0;
+    sueroDesbloqueado = false;
+    inventario.clear();
+}
+
 int Jugador::getExperiencia() const { return experiencia; }

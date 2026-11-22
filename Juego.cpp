@@ -1,65 +1,171 @@
 #include "Juego.h"
 #include "Combate.h"
 #include "Entrada.h"
-#include "Ladron.h"
+#include "Perro.h"
 #include "Asesino.h"
 #include "Conductor.h"
 #include <iostream>
 
 using namespace std;
 
-Juego::Juego() : jugador("Heroe"), vagonActual(3) {}
+Juego::Juego()
+    : jugador("Heroe"), vagonActual(0), intentoActivo(false), partidaGanada(false) {
+    for (int i = 0; i < NUM_VAGONES; i++) completado[i] = false;
+}
 
 Juego::~Juego() { liberar(); }
 
 void Juego::liberar() {
     for (Vagon* v : vagones) {
-        for (Enemigo* e : v->getEnemigos()) delete e;
+        for (Enemigo* e : v->vaciarEnemigos()) delete e;
         delete v;
     }
     vagones.clear();
 }
 
-void Juego::crearNivel() {
+void Juego::crearVagones() {
     liberar();
 
-    const string descripciones[4] = {
+    const string descripciones[NUM_VAGONES] = {
+        "Abres los ojos en el ultimo vagon. El tren avanza sin control.\n"
+        "Un perro rabioso ladra con furia entre los asientos.",
+        "Las luces apenas funcionan. Entre las sombras, algo metalico brilla: un cuchillo.\n"
+        "Sobre un asiento hay una chaqueta de cuero.",
+        "Dos siluetas te bloquean el paso. Las dos afilan una hoja.",
+        "Un perro rabioso vigila junto a un hombre armado.\n"
+        "Al fondo hay una caja con una cruz roja.",
         "La cabina tiembla. Frente a los controles, el Conductor ni siquiera se voltea:\n"
-        "\"Llegaste tarde. Nadie baja de este tren\".",
-        "Dos figuras te esperan. Uno hace sonar sus llaves; el otro afila una hoja.",
-        "Las luces apenas funcionan. Entre las sombras, algo metalico brilla: un cuchillo.",
-        "Abres los ojos en el ultimo vagon. El tren vibra con fuerza y las luces parpadean.\n"
-        "Un hombre encorvado revisa los asientos y, al verte, sonrie y se acerca a tus bolsillos."
+        "\"Llegaste tarde. Nadie baja de este tren\"."
     };
 
-    for (int i = 0; i < 4; i++) vagones.push_back(new Vagon(i + 1, descripciones[i]));
+    for (int i = 0; i < NUM_VAGONES; i++) vagones.push_back(new Vagon(i + 1, descripciones[i]));
 
-    // "adelante" lleva hacia la cabina del Conductor (vagon 1); "atras" hacia el vagon 4
-    for (int i = 0; i < 4; i++) {
-        if (i > 0) vagones[i]->conectar("adelante", vagones[i - 1]);
-        if (i < 3) vagones[i]->conectar("atras", vagones[i + 1]);
+    // "adelante" lleva al vagon siguiente (hacia la cabina); "atras" al anterior
+    for (int i = 0; i < NUM_VAGONES; i++) {
+        if (i > 0) vagones[i]->conectar("atras", vagones[i - 1]);
+        if (i < NUM_VAGONES - 1) vagones[i]->conectar("adelante", vagones[i + 1]);
     }
 
-    // Nivel 1
-    vagones[3]->agregarEnemigo(new Ladron());
-    vagones[3]->agregarObjeto(Objeto::crearChaqueta());
+    // Objetos: la chaqueta en el vagon 2 y el suero en el vagon 4
+    vagones[1]->agregarObjeto(Objeto::crearChaqueta());
+    vagones[3]->agregarObjeto(Objeto::crearSueroVital());
+}
 
-    vagones[2]->agregarEnemigo(new Asesino());
+void Juego::vaciarVagon(int indice) {
+    for (Enemigo* e : vagones[indice]->vaciarEnemigos()) delete e;
+}
 
-    vagones[1]->agregarEnemigo(new Ladron());
-    vagones[1]->agregarEnemigo(new Asesino());
-    vagones[1]->agregarObjeto(Objeto::crearSueroVital());
+void Juego::crearEnemigos(int indice) {
+    vaciarVagon(indice);
+    Vagon* v = vagones[indice];
+    switch (indice) {
+        case 0: v->agregarEnemigo(new Perro()); break;
+        case 1: v->agregarEnemigo(new Asesino()); break;
+        case 2: v->agregarEnemigo(new Asesino()); v->agregarEnemigo(new Asesino()); break;
+        case 3: v->agregarEnemigo(new Perro()); v->agregarEnemigo(new Asesino()); break;
+        case 4: v->agregarEnemigo(new Conductor()); break;
+    }
+}
 
-    vagones[0]->agregarEnemigo(new Conductor(6));
+void Juego::mostrarTutorial() {
+    cout << "\n=== VAGON 1 de " << NUM_VAGONES << " ===\n"
+         << vagones[0]->getDescripcion() << "\n\n"
+         << "REGLAS\n"
+         << " - Cada vagon es un nivel. Tienes 8 vidas al empezar cada uno.\n"
+         << " - Si pierdes todas tus vidas, vuelves al vagon anterior y pierdes la experiencia de ese intento.\n"
+         << " - No puedes avanzar hasta derrotar a todos los enemigos del vagon.\n"
+         << " - Puedes retroceder cuando quieras, pero perderas la experiencia de ese intento.\n"
+         << " - Los vagones que ya completaste se pueden volver a jugar para ganar mas experiencia.\n"
+         << " - En el vagon 5 esta el Conductor, que quiere estrellar el tren. Detenlo.\n\n"
+         << "INVENTARIO\n"
+         << " Recibes: Navaja (dano 2) y Latigo (dano 1 a todos los enemigos).\n"
+         << " Mas adelante encontraras una chaqueta y un suero vital.\n"
+         << " 1) Continuar\n> ";
+    leerOpcion(1, 1);
+}
+
+void Juego::nuevaPartida() {
+    crearVagones();
+    for (int i = 0; i < NUM_VAGONES; i++) completado[i] = false;
+    partidaGanada = false;
+    intentoActivo = false;
+    jugador.reiniciar();
+
+    mostrarTutorial();
+    jugador.agregarObjeto(Objeto::crearNavaja());
+    jugador.agregarObjeto(Objeto::crearLatigo());
+
+    vagonActual = 0;
+    comenzarIntento(0);
+}
+
+void Juego::comenzarIntento(int indice) {
+    vagonActual = indice;
+    crearEnemigos(indice);
+    jugador.iniciarNivel();
+    intentoActivo = true;
+}
+
+void Juego::entrarAVagon(int indice) {
+    vagonActual = indice;
+    cout << "\n=== VAGON " << indice + 1 << " de " << NUM_VAGONES << " ===\n"
+         << vagones[indice]->getDescripcion() << "\n";
+
+    if (completado[indice]) {
+        cout << "\nYa completaste este vagon. Quieres volver a jugarlo? (suma experiencia)\n"
+             << " 1) No, solo entrar\n"
+             << " 2) Si, jugarlo de nuevo\n> ";
+        if (leerOpcion(1, 2) == 2) {
+            comenzarIntento(indice);
+        } else {
+            vaciarVagon(indice);       // entra a un vagon vacio
+            intentoActivo = false;
+        }
+    } else {
+        comenzarIntento(indice);
+    }
+}
+
+void Juego::completarNivel() {
+    completado[vagonActual] = true;
+    intentoActivo = false;
+    cout << "\nVagon " << vagonActual + 1 << " completado.\n";
+    if (vagonActual == NUM_VAGONES - 1) {
+        partidaGanada = true;
+    } else {
+        cout << "Ya puedes avanzar al vagon " << vagonActual + 2 << ".\n";
+    }
+}
+
+void Juego::perderNivel() {
+    cout << "\nTodo se oscurece... Te quedaste sin vidas.\n"
+         << "Pierdes la experiencia de este intento.\n";
+    jugador.descartarIntento();
+    intentoActivo = false;
+    vaciarVagon(vagonActual);
+
+    if (vagonActual == 0) {
+        cout << "Reintentas el vagon 1.\n";
+        entrarAVagon(0);
+    } else {
+        cout << "Vuelves al vagon anterior.\n";
+        entrarAVagon(vagonActual - 1);
+    }
 }
 
 void Juego::mostrarEstado() const {
     const Vagon* vagon = vagones[vagonActual];
 
     cout << "\n----------------------------------------\n";
-    cout << "Vagon " << vagon->getNumero()
+    cout << "Vagon " << vagon->getNumero() << " de " << NUM_VAGONES
          << " | Vidas: " << jugador.getVidas() << "/" << jugador.getVidasMax()
-         << " | Chaqueta: " << (jugador.tieneChaqueta() ? "si" : "no") << "\n";
+         << " | Experiencia: " << jugador.getExperiencia() << "\n";
+
+    cout << "Inventario:";
+    const vector<Objeto>& inv = jugador.getInventario();
+    for (size_t i = 0; i < inv.size(); i++) cout << (i == 0 ? " " : ", ") << inv[i].getNombre();
+    if (inv.empty()) cout << " (vacio)";
+    cout << "\n";
 
     if (vagon->hayEnemigosVivos()) {
         cout << "Enemigos:\n";
@@ -87,46 +193,64 @@ void Juego::ejecutarMenu() {
     switch (opcion) {
         case 1: gastoTurno = combate.accionAtacar(); break;
         case 2: gastoTurno = jugador.usarSuero(); break;
-        case 3: cambiarDeVagon(); break;
+        case 3: cambiarDeVagon(); return;   // puede cambiar de vagon: no seguir con el anterior
         case 4: recogerObjetos(); break;
     }
 
     // Si el jugador gasto su turno y quedan enemigos, ellos responden
     if (gastoTurno && vagon->hayEnemigosVivos()) combate.turnoEnemigos();
+
+    if (!jugador.estaVivo()) {
+        perderNivel();
+    } else if (intentoActivo && !vagon->hayEnemigosVivos()) {
+        completarNivel();
+    }
 }
 
 void Juego::cambiarDeVagon() {
     Vagon* actual = vagones[vagonActual];
 
-    cout << "Adonde vas?\n"
-         << " 1) Vagon anterior (hacia la cola)\n"
-         << " 2) Vagon siguiente (hacia la cabina del Conductor)\n"
-         << " 0) Volver\n> ";
-    int opcion = leerOpcion(0, 2);
-    if (opcion == 0) return;
+    cout << "Adonde vas?\n 1) Volver\n";
+    cout << " 2) Vagon anterior";
+    if (vagonActual > 0) cout << " (vagon " << vagonActual << (completado[vagonActual - 1] ? ", completado" : "") << ")";
+    else cout << " (no hay)";
+    cout << "\n 3) Vagon siguiente";
+    if (vagonActual < NUM_VAGONES - 1)
+        cout << " (vagon " << vagonActual + 2 << (completado[vagonActual + 1] ? ", completado" : "") << ")";
+    else cout << " (no hay)";
+    cout << "\n> ";
+    int opcion = leerOpcion(1, 3);
 
-    Vagon* destino = nullptr;
-    if (opcion == 1) {
-        destino = actual->getSalida("atras");
-        if (destino == nullptr) {
+    if (opcion == 1) return;
+
+    if (opcion == 2) {
+        if (vagonActual == 0) {
             cout << "No hay un vagon anterior.\n";
             return;
         }
-    } else {
-        if (actual->hayEnemigosVivos()) {
-            cout << "Primero derrota a tus enemigos para cambiar de vagon.\n";
-            return;
+        // Retroceder en medio de una pelea = abandonar el intento
+        if (intentoActivo && actual->hayEnemigosVivos()) {
+            cout << "Si retrocedes ahora perderas la experiencia de este intento y el vagon se reiniciara.\n"
+                 << " 1) Volver\n 2) Retroceder\n> ";
+            if (leerOpcion(1, 2) == 1) return;
+            jugador.descartarIntento();
+            intentoActivo = false;
+            vaciarVagon(vagonActual);
         }
-        destino = actual->getSalida("adelante");
-        if (destino == nullptr) {
-            cout << "No hay mas vagones adelante.\n";
-            return;
-        }
+        entrarAVagon(vagonActual - 1);
+        return;
     }
 
-    vagonActual = destino->getNumero() - 1;
-    cout << "\n";
-    destino->describir();
+    // opcion == 3: avanzar
+    if (vagonActual == NUM_VAGONES - 1) {
+        cout << "No hay mas vagones adelante.\n";
+        return;
+    }
+    if (actual->hayEnemigosVivos()) {
+        cout << "Primero derrota a tus enemigos para cambiar de vagon.\n";
+        return;
+    }
+    entrarAVagon(vagonActual + 1);
 }
 
 void Juego::recogerObjetos() {
@@ -137,27 +261,36 @@ void Juego::recogerObjetos() {
     }
 }
 
-void Juego::iniciar() {
-    cout << "ULTIMO VAGON\n";
-    cout << "Un tren avanza sin control. En el primer vagon, el Conductor quiere estrellarlo.\n";
-    cout << "Recorre los vagones, sobrevive y detenlo.\n\n";
-
-    jugador.iniciarNivel();
-    crearNivel();
-    vagonActual = 3;   // empieza en el vagon 4
-    vagones[vagonActual]->describir();
-
-    // El nivel termina cuando el Conductor (vagon 1) cae, o cuando el jugador muere
-    while (jugador.estaVivo() && vagones[0]->hayEnemigosVivos()) {
+int Juego::jugarPartida() {
+    while (!partidaGanada) {
         mostrarEstado();
         ejecutarMenu();
     }
 
-    cout << "\n========================================\n";
-    if (jugador.estaVivo()) {
-        cout << "El Conductor cae. Tiras de la palanca y el tren frena hasta detenerse.\n";
-        cout << "Ganaste! Experiencia total: " << jugador.getExperiencia() << "\n";
-    } else {
-        cout << "Todo se oscurece... Perdiste.\n";
+    cout << "\n========================================\n"
+         << "El Conductor cae. Tiras de la palanca y el tren frena hasta detenerse.\n"
+         << "Ganaste! Experiencia total: " << jugador.getExperiencia() << "\n"
+         << " 1) Volver al menu principal\n"
+         << " 2) Salir\n> ";
+    return leerOpcion(1, 2);
+}
+
+void Juego::iniciar() {
+    while (true) {
+        cout << "\n=== ULTIMO VAGON ===\n"
+             << " 1) Nueva partida\n"
+             << " 2) Cargar partida\n"
+             << " 3) Salir\n> ";
+        int opcion = leerOpcion(1, 3);
+
+        if (opcion == 3) break;
+        if (opcion == 2) {
+            cout << "Todavia no esta disponible.\n";
+            continue;
+        }
+
+        nuevaPartida();
+        if (jugarPartida() == 2) break;
     }
+    cout << "Hasta luego!\n";
 }

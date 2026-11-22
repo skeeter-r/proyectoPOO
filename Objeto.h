@@ -4,11 +4,10 @@
 #include <string>
 
 // Cada tipo de objeto del juego. El comportamiento especial se deduce del tipo:
-//   LATIGO     -> golpea a todos los enemigos del vagon
-//   NUDILLERAS -> arma de un solo uso (el Ladron puede robarla)
-//   CHAQUETA   -> reduce 1 el dano de cada golpe recibido (minimo 1)
-//   SUERO_VITAL-> +4 vidas, un solo uso
-enum class TipoObjeto { NAVAJA, LATIGO, NUDILLERAS, CHAQUETA, SUERO_VITAL };
+//   LATIGO      -> golpea a todos los enemigos del vagon
+//   CHAQUETA    -> reduce 1 el dano de cada golpe recibido (minimo 1), de forma automatica
+//   SUERO_VITAL -> +4 vidas, un solo uso por nivel
+enum class TipoObjeto { NAVAJA, LATIGO, CHAQUETA, SUERO_VITAL };
 
 class Objeto {
 private:
@@ -27,9 +26,8 @@ public:
     TipoObjeto getTipo() const;
     int getValor() const;
 
-    bool esArma() const;         // navaja, latigo o nudilleras
+    bool esArma() const;         // navaja o latigo
     bool golpeaATodos() const;   // solo el latigo
-    bool esUsoUnico() const;     // solo las nudilleras
 
     // Una linea para el archivo de guardado: el nombre del objeto
     std::string serializar() const;
@@ -37,7 +35,6 @@ public:
     // "Fabricas" con los objetos del juego
     static Objeto crearNavaja();      // dano 2
     static Objeto crearLatigo();      // dano 1 a todos
-    static Objeto crearNudilleras();  // dano 4, un solo uso
     static Objeto crearChaqueta();    // reduce 1 el dano recibido
     static Objeto crearSueroVital();  // +4 vidas
 };
