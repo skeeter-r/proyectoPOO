@@ -8,7 +8,7 @@
 using namespace std;
 
 namespace {
-const string ENCABEZADO = "ULTIMO_VAGON_V1";
+const string ENCABEZADO = "TREN_A_LA_DERIVA";
 
 vector<string> dividir(const string& texto, char separador) {
     vector<string> partes;
