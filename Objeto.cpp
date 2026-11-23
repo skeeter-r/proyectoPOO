@@ -17,6 +17,15 @@ bool Objeto::golpeaATodos() const { return tipo == TipoObjeto::LATIGO; }
 
 std::string Objeto::serializar() const { return nombre; }
 
+bool Objeto::desdeNombre(const std::string& nombre, Objeto& salida) {
+    if (nombre == "Navaja") salida = crearNavaja();
+    else if (nombre == "Latigo") salida = crearLatigo();
+    else if (nombre == "Chaqueta") salida = crearChaqueta();
+    else if (nombre == "Suero vital") salida = crearSueroVital();
+    else return false;
+    return true;
+}
+
 // ---- Fabricas: aqui estan todos los numeros de los objetos ----
 Objeto Objeto::crearNavaja() {
     return Objeto("Navaja", "Resta 2 vidas a un enemigo", TipoObjeto::NAVAJA, 2);

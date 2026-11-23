@@ -32,6 +32,9 @@ public:
     // Una linea para el archivo de guardado: el nombre del objeto
     std::string serializar() const;
 
+    // Crea un objeto a partir de su nombre (para cargar partidas). false si el nombre no existe.
+    static bool desdeNombre(const std::string& nombre, Objeto& salida);
+
     // "Fabricas" con los objetos del juego
     static Objeto crearNavaja();      // dano 2
     static Objeto crearLatigo();      // dano 1 a todos

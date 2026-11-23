@@ -33,6 +33,10 @@ void Vagon::agregarObjeto(const Objeto& objeto) { objetos.push_back(objeto); }
 
 bool Vagon::hayObjetos() const { return !objetos.empty(); }
 
+const std::vector<Objeto>& Vagon::getObjetos() const { return objetos; }
+
+void Vagon::vaciarObjetos() { objetos.clear(); }
+
 std::vector<Objeto> Vagon::recogerObjetos() {
     std::vector<Objeto> tomados;
     if (hayEnemigosVivos()) return tomados;   // no se puede mientras haya enemigos
